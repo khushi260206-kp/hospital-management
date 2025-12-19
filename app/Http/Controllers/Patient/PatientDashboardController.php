@@ -44,10 +44,14 @@ class PatientDashboardController extends Controller
         return view('patient.dashboard', compact('stats', 'upcomingAppointments'));
     }
 
-    public function appointments()
+    public function appointments(Request $request)
     {
         $patient = auth()->user()->patient;
-        $appointments = $this->appointmentService->getAppointmentsByPatient($patient->id);
+        
+        $filters = $request->only(['status', 'date', 'per_page']);
+        $filters['patient_id'] = $patient->id;
+        
+        $appointments = $this->appointmentService->getAllAppointments($filters);
         
         return view('patient.appointments', compact('appointments'));
     }

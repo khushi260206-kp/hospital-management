@@ -120,10 +120,12 @@ class DoctorService
 
     public function getAvailableDoctors()
     {
-        $doctorsArray = $this->doctorRepository->getAvailableDoctors();
-        return collect($doctorsArray)->map(function($doctor) {
-            return (object) $doctor;
-        });
+        // Get doctors with proper relationships loaded
+        $doctors = \App\Models\Doctor::where('availability', 'available')
+            ->with(['user', 'department'])
+            ->get();
+        
+        return $doctors;
     }
 }
 

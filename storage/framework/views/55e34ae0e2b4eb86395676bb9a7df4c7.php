@@ -324,21 +324,18 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="<?php echo e(route('admin.patients.create')); ?>">
-                                    <i class="bi bi-person-plus"></i> Register Patient
-                                </a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link" href="<?php echo e(route('billing.index')); ?>">
                                     <i class="bi bi-receipt"></i> Billing
                                 </a>
                             </li>
                         <?php endif; ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?php echo e(route('appointments.index')); ?>">
-                                <i class="bi bi-calendar-event"></i> Appointments
-                            </a>
-                        </li>
+                        <?php if(!auth()->user()->isDoctor() && !auth()->user()->isPatient()): ?>
+                            <li class="nav-item">
+                                <a class="nav-link" href="<?php echo e(route('appointments.index')); ?>">
+                                    <i class="bi bi-calendar-event"></i> Appointments
+                                </a>
+                            </li>
+                        <?php endif; ?>
                     </ul>
                     <ul class="navbar-nav">
                         <li class="nav-item dropdown">

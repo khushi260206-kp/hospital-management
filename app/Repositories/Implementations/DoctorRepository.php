@@ -75,5 +75,46 @@ class DoctorRepository implements DoctorRepositoryInterface
             ->get()
             ->toArray();
     }
+
+    public function getDoctorsByDepartmentWithAvailability(int $departmentId, string $date, string $time): \Illuminate\Support\Collection
+    {
+        // Parse time to check working hours (format: H:i)
+        $appointmentTime = \Carbon\Carbon::createFromFormat('H:i', $time)->format('H:i:s');
+
+        return Doctor::where('department_id', $departmentId)
+            ->where('availability', 'available')
+            ->whereRaw('TIME(?) >= TIME(working_hours_start)', [$appointmentTime])
+            ->whereRaw('TIME(?) <= TIME(working_hours_end)', [$appointmentTime])
+            ->with(['user', 'department'])
+            ->get();
+    }
+
+    public function getDoctorAppointmentCount(int $doctorId, string $date): int
+    {
+        return \App\Models\Appointment::where('doctor_id', $doctorId)
+            ->whereDate('appointment_date', $date)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->count();
+    }
+
+    public function checkWorkingHours(int $doctorId, string $time): bool
+    {
+        $doctor = Doctor::find($doctorId);
+        if (!$doctor) {
+            return false;
+        }
+
+        // Parse time strings to compare
+        $appointmentTime = \Carbon\Carbon::createFromFormat('H:i', $time);
+        $startTime = \Carbon\Carbon::parse($doctor->working_hours_start);
+        $endTime = \Carbon\Carbon::parse($doctor->working_hours_end);
+
+        // Compare times (ignoring date part)
+        $appointmentTimeOnly = $appointmentTime->format('H:i:s');
+        $startTimeOnly = $startTime->format('H:i:s');
+        $endTimeOnly = $endTime->format('H:i:s');
+
+        return $appointmentTimeOnly >= $startTimeOnly && $appointmentTimeOnly <= $endTimeOnly;
+    }
 }
 

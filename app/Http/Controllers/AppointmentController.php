@@ -6,14 +6,19 @@ use App\Http\Requests\StoreAppointmentRequest;
 use App\Services\AppointmentService;
 use App\Services\DoctorService;
 use App\Services\PatientService;
+use App\Services\DepartmentService;
+use App\Services\DoctorRecommendationService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class AppointmentController extends Controller
 {
     public function __construct(
         private AppointmentService $appointmentService,
         private DoctorService $doctorService,
-        private PatientService $patientService
+        private PatientService $patientService,
+        private DepartmentService $departmentService,
+        private DoctorRecommendationService $doctorRecommendationService
     ) {
         $this->middleware('auth');
     }
@@ -49,25 +54,26 @@ class AppointmentController extends Controller
     public function create()
     {
         $doctors = $this->doctorService->getAvailableDoctors();
+        $departments = $this->departmentService->getActiveDepartments();
         
         $patients = collect([]);
         if (auth()->user()->isAdmin() || auth()->user()->isReceptionist()) {
             $patients = $this->patientService->getAllPatients(['per_page' => 100])->items();
         }
 
-        return view('appointments.create', compact('doctors', 'patients'));
+        return view('appointments.create', compact('doctors', 'patients', 'departments'));
     }
 
     public function store(StoreAppointmentRequest $request)
     {
         try {
-            // If patient is creating, use their patient_id
+            // Patient ID is already set in StoreAppointmentRequest::prepareForValidation()
+            // Just validate that patient exists if user is a patient
             if (auth()->user()->isPatient()) {
                 $patient = auth()->user()->patient;
                 if (!$patient) {
                     return back()->withErrors(['error' => 'Patient profile not found.'])->withInput();
                 }
-                $request->merge(['patient_id' => $patient->id]);
             }
 
             $this->appointmentService->createAppointment($request->validated());
@@ -140,6 +146,49 @@ class AppointmentController extends Controller
                 ->with('success', 'Appointment marked as completed.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Get recommended doctor via AJAX
+     */
+    public function getRecommendedDoctor(Request $request): JsonResponse
+    {
+        $request->validate([
+            'department_id' => 'required|exists:departments,id',
+            'appointment_date' => 'required|date|after_or_equal:today',
+            'appointment_time' => 'required|date_format:H:i',
+        ]);
+
+        try {
+            $recommendedDoctor = $this->doctorRecommendationService->recommendDoctor(
+                $request->department_id,
+                $request->appointment_date,
+                $request->appointment_time
+            );
+
+            if ($recommendedDoctor) {
+                return response()->json([
+                    'success' => true,
+                    'doctor' => [
+                        'id' => $recommendedDoctor->id,
+                        'name' => $recommendedDoctor->user ? $recommendedDoctor->user->name : 'Doctor #' . $recommendedDoctor->id,
+                        'specialization' => $recommendedDoctor->specialization,
+                        'experience_years' => $recommendedDoctor->experience_years,
+                    ],
+                    'message' => 'Doctor recommended successfully.',
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No doctors available for the selected criteria.',
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
 }

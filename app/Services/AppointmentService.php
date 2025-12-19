@@ -8,7 +8,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class AppointmentService
 {
     public function __construct(
-        private AppointmentRepositoryInterface $appointmentRepository
+        private AppointmentRepositoryInterface $appointmentRepository,
+        private DoctorRecommendationService $doctorRecommendationService
     ) {}
 
     public function getAllAppointments(array $filters = []): LengthAwarePaginator
@@ -23,6 +24,26 @@ class AppointmentService
 
     public function createAppointment(array $data)
     {
+        // If doctor_id is not provided but department_id is provided, use recommendation service
+        if (!isset($data['doctor_id']) && isset($data['department_id'])) {
+            $recommendedDoctor = $this->doctorRecommendationService->recommendDoctor(
+                $data['department_id'],
+                $data['appointment_date'],
+                $data['appointment_time']
+            );
+
+            if (!$recommendedDoctor) {
+                throw new \Exception('No doctors available for the selected department, date, and time.');
+            }
+
+            $data['doctor_id'] = $recommendedDoctor->id;
+        }
+
+        // Ensure doctor_id is set
+        if (!isset($data['doctor_id'])) {
+            throw new \Exception('Doctor ID is required.');
+        }
+
         // Check availability
         $isAvailable = $this->appointmentRepository->checkAvailability(
             $data['doctor_id'],

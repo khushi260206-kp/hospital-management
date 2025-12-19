@@ -44,7 +44,7 @@
                         <button type="submit" class="btn btn-primary flex-grow-1">
                             <i class="bi bi-funnel"></i> Filter
                         </button>
-                        <a href="{{ route('patient.appointments') }}" class="btn btn-secondary">
+                        <a href="{{ route('doctor.appointments') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Clear
                         </a>
                     </div>
@@ -58,8 +58,7 @@
                     <tr>
                         <th>Date</th>
                         <th>Time</th>
-                        <th>Doctor</th>
-                        <th>Department</th>
+                        <th>Patient</th>
                         <th>Reason</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -71,15 +70,8 @@
                             <td><i class="bi bi-calendar3"></i> {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y') }}</td>
                             <td><i class="bi bi-clock"></i> {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}</td>
                             <td>
-                                @if($appointment->doctor && $appointment->doctor->user)
-                                    <i class="bi bi-heart-pulse"></i> {{ $appointment->doctor->user->name }}
-                                @else
-                                    <span class="text-muted">N/A</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($appointment->doctor && $appointment->doctor->department)
-                                    <i class="bi bi-building"></i> {{ $appointment->doctor->department->name }}
+                                @if($appointment->patient && $appointment->patient->user)
+                                    <i class="bi bi-person"></i> {{ $appointment->patient->user->name }}
                                 @else
                                     <span class="text-muted">N/A</span>
                                 @endif
@@ -95,10 +87,10 @@
                                     <i class="bi bi-eye"></i> View
                                 </a>
                                 @if($appointment->status !== 'completed' && $appointment->status !== 'cancelled')
-                                    <form action="{{ route('appointments.cancel', $appointment->id) }}" method="POST" class="d-inline">
+                                    <form action="{{ route('appointments.complete', $appointment->id) }}" method="POST" class="d-inline">
                                         @csrf
-                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to cancel this appointment?')">
-                                            <i class="bi bi-x-circle"></i> Cancel
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="bi bi-check-circle"></i> Complete
                                         </button>
                                     </form>
                                 @endif
@@ -106,7 +98,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-4">
+                            <td colspan="6" class="text-center py-4">
                                 <i class="bi bi-inbox" style="font-size: 2rem; color: #ccc;"></i>
                                 <p class="text-muted mt-2">No appointments found</p>
                             </td>

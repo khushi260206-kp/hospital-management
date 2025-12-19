@@ -318,21 +318,18 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.patients.create') }}">
-                                    <i class="bi bi-person-plus"></i> Register Patient
-                                </a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link" href="{{ route('billing.index') }}">
                                     <i class="bi bi-receipt"></i> Billing
                                 </a>
                             </li>
                         @endif
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('appointments.index') }}">
-                                <i class="bi bi-calendar-event"></i> Appointments
-                            </a>
-                        </li>
+                        @if(!auth()->user()->isDoctor() && !auth()->user()->isPatient())
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('appointments.index') }}">
+                                    <i class="bi bi-calendar-event"></i> Appointments
+                                </a>
+                            </li>
+                        @endif
                     </ul>
                     <ul class="navbar-nav">
                         <li class="nav-item dropdown">

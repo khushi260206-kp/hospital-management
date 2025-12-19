@@ -73,6 +73,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('appointments', AppointmentController::class);
     Route::post('/appointments/{id}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
     Route::post('/appointments/{id}/complete', [AppointmentController::class, 'complete'])->name('appointments.complete');
+    Route::post('/appointments/recommend-doctor', [AppointmentController::class, 'getRecommendedDoctor'])->name('appointments.recommend-doctor');
 });
 
 // Billing Routes
